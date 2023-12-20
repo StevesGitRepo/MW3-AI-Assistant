@@ -1,0 +1,92 @@
+﻿.page{
+    background-image: url(images/ChefGPTBgPurplePink.png);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    color: var(--bs-primary);
+    font-size: 1.2rem;
+}
+
+@media (max-width: 800px) {
+    .page {
+        background-image: url(images/cbMobileBg.PNG);
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: cover;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 110%;
+        font-size: 1.2rem;
+    }
+}
+    
+.pagestyle {
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(2px) brightness(40%);
+    height: 100%;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+footer {
+    flex-shrink: 0;
+}
+
+.landingPage{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.btn {
+    color: #FFF;
+}
+
+.btn-outline-light {
+    font-size: x-large;
+    font-family: 'Staatliches', sans-serif;
+    color: white;
+    font-weight:400;
+}
+
+.btn-outline-light:hover {
+    color: #43025B;
+}
+
+.small-footer-text {
+    font-size: small;
+}
+
+/*.hidden-from-top {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateY(25%);
+    transition: 1s;
+    transition-delay: 1s;
+}
+
+.hidden-from-left {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateX(-25%);
+    transition: 1s;
+    transition-delay: 1s;
+}
+
+.hidden-from-right {
+    opacity: 0;
+    filter: blur(2px);
+    transform: translateX(25%);
+    transition: 1s;
+    transition-delay: 1s;
+}*/

@@ -1,0 +1,99 @@
+﻿@page "/glutenfreemealideas"
+@using ChefGPT.Shared
+@using System.Text.Json
+@inject NavigationManager navigationManager;
+@inject HttpClient Http;
+
+@if (loaded == true)
+{
+    <div class="container mt-5">
+        <h2 class="text-pink">Choose a Meal to Make</h2>
+        <div class="list-group">
+            @foreach (var idea in ideas)
+            {
+                <button @onclick="() => GetRecipe(idea.index)" class="list-group list-group-item-action list-group-item-warning p-2">
+                    <div class="d-flex w-100 justify-content-sm-between">
+                        <h2 class="mb-1 fw-bold text-purple">@idea.title</h2>
+                    </div>
+                    <p class="mb-1">@idea.description</p>
+                </button>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <ChefSpinner></ChefSpinner>
+}
+
+@code {
+    private List<Idea> ideas = new List<Idea>();
+    private bool loaded = false;
+
+    [CascadingParameter]
+    private RecipeState? rState { get; set; }
+
+    private readonly JsonSerializerOptions _jsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull
+        };
+
+    protected override void OnInitialized()
+    {
+        if (rState is null)
+        {
+            navigationManager.NavigateTo("/", forceLoad: true);
+            return;
+        }
+
+        if (rState.Ideas.Count < 1)
+        {
+            GetIdeas();
+        }
+        else
+        {
+            loaded = true;
+            ideas = rState.Ideas;
+            StateHasChanged();
+        }
+    }
+
+    private async void GetIdeas()
+    {
+        // THIS CALLS ChefGPT.Server
+        string baseuri = "Recipe/GetRecipeIdeas";
+        loaded = false;
+
+        RecipeParms recipeParms = new RecipeParms()
+            {
+                MealTime = rState!.MealTime,
+                Ingredients = rState.Ingredients
+            };
+
+        //call web api controller.
+        try
+        {
+            HttpResponseMessage response = await Http.PostAsJsonAsync(baseuri, recipeParms, _jsonOptions);
+
+            response.EnsureSuccessStatusCode();
+
+            //This ensures that the types of API coming in matches the class types
+            ideas = (await response.Content.ReadFromJsonAsync<List<Idea>>())!;
+            rState.Ideas = ideas;
+            loaded = true;
+            StateHasChanged();
+        }
+        catch
+        {
+
+            Console.WriteLine("Error: could not fetch recipe ideas");
+        }
+    }
+
+    private void GetRecipe(int index)
+    {
+        navigationManager.NavigateTo($"/mealrecipe/{index}");
+    }
+}

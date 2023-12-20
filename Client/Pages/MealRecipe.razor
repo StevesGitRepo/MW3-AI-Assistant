@@ -1,0 +1,132 @@
+﻿@page "/mealrecipe/{Index:int}"
+@using ChefGPT.Shared
+@using System.Text.Json
+@using System.Web
+@using Microsoft.JSInterop
+
+@inject IJSRuntime Javascript
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+@if (loaded == true)
+{
+    <div class="container mt-5 h-100">
+        <div class="d-flex flex-column flex-lg-row justify-content-start">
+            <div class="text-center text-lg-start mb-3">
+                <img src="@recipeImageUrl" class="rounded-3 recipeImage d-print-none" />
+            </div>
+            <div class="flex-grow-1 px-5">
+                <h1 class="fw-bold">@recipe?.title</h1>
+                <div class="row">
+                    <div class="col-lg-10">
+                        <p class="">@recipe?.summary</p>
+                        <div class="text-end">
+                            <button class="btn btn-primary d-print-none" @onclick="Print">Print Recipe</button>
+                        </div>
+                        <hr>
+                        <p><span class="fw-bold text-pink">PRO TIP: </span>AI-generated content can be unpredictable. If it's not food don't eat it, otherwise enjoy!</p>
+                        <div class="text-center ">
+                            <img class="d-print-none" src="/images/ChefByteTalkingHead.png" width="150" />
+                        </div>
+                    </div>
+                    <div class="col-lg-2"></div>
+                </div>
+            </div>
+        </div>
+        <div class="row row-cols-1 row-cols-md-2">
+            <div class="col mt-3">
+                <h2>Ingredients</h2>
+                <ul>
+                    @foreach (var item in recipe!.ingredients!)
+                        {
+                        <li>@item</li>
+                    }
+                </ul>
+            </div>
+            <div class="col mt-3 pe-4 pe-lg-2">
+                <h2>Instructions</h2>
+                <ul>
+                    @foreach (var item in recipe!.instructions!)
+                    {
+                        <li>@item</li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+}
+
+else
+
+{
+    <RecipeSpinner></RecipeSpinner>
+}
+
+@code {
+
+
+    [CascadingParameter]
+    private RecipeState? rState { get; set; }
+
+    [Parameter]
+    public int Index { get; set; }
+
+    //This code should be used in every Page
+    bool loaded = false;
+
+    private string title;
+    private string recipeImageUrl = string.Empty;
+    private Recipe recipe;
+
+    protected override void OnInitialized()
+    {
+        bool loaded = false;
+        GetRecipe();
+    }
+
+    private async void GetRecipe()
+    {
+        string baseuri = "Recipe/GetRecipe";
+
+        if (rState is not null)
+        {
+            try
+            {
+                title = rState.Ideas.FirstOrDefault(i => i.index == Index).title;
+                RecipeParms recipeParms = new RecipeParms()
+                    {
+                        MealTime = rState.MealTime,
+                        Ingredients = rState.Ingredients,
+                        SelectedIdea = title
+                    };
+
+                //get recipe image
+                HttpResponseMessage responseImage = await Http.GetAsync($"Recipe/getRecipeImage?title={HttpUtility.UrlEncode(title)}");
+                var recipeImage = await responseImage.Content.ReadFromJsonAsync<RecipeImage>();
+                recipeImageUrl = recipeImage!.data[0]!.url;
+
+
+                //get the recipe
+                HttpResponseMessage responseRecipe = await Http.PostAsJsonAsync(baseuri, recipeParms);
+
+                responseRecipe.EnsureSuccessStatusCode();
+
+                recipe = (await responseRecipe.Content.ReadFromJsonAsync<Recipe>())!;
+
+                loaded = true;
+                StateHasChanged();
+
+            }
+            catch
+            {
+                Console.WriteLine("Error: Could not generate recipe.");
+            }
+        }
+
+    }
+
+    private async Task Print()
+    {
+        await Javascript.InvokeVoidAsync("printInvoke");
+    }
+}

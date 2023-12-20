@@ -1,0 +1,160 @@
+﻿@page "/createmeal"
+@using ChefGPT.Shared
+@using Microsoft.AspNetCore.Components.Forms;
+@using System.ComponentModel.DataAnnotations;
+@inject NavigationManager navigationManager;
+
+<PageTitle>Chef GPT - Create Meal</PageTitle>
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12 col-lg-6 mb-5">
+            <h2 class="text-pink">Create A Meal</h2>
+            <p>Pick a Meal Time, add some Ingredients, and make a meal!</p>
+            <!--EVERY FORM MUST HAVE A MODEL, editcontext is a variable-->
+            <EditForm EditContext="@editcontext">
+                <div class="row gy-7">
+                    <div class="col-12">
+                        <label class="form-label">Meal Time</label>
+                        <InputSelect @bind-Value="meal.mealtime" class="form-select">
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner">Dinner</option>
+                            <option value="Dessert">Dessert</option>
+                        </InputSelect>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label mt-4">Ingredient</label>
+                        <InputText placeholder="Add Ingredient"
+                                   maxlength="30"
+                                   @bind-Value="meal.ingredient"
+                                   class="form-control"
+                                   >
+                        </InputText>
+                    </div>
+                    <div class="col-12 mt-4">
+                        <button class="btn-dangerous btn me-2" @onclick="AddIngredient">Add</button>
+                        <button class="btn btn-outline-dangerous" @onclick="RemoveAll">Clear Ingredient List</button>
+
+                    </div>
+                    <div class="col-12 mt-3">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th><span class="text-pink">Ingredients</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in ingredients)
+                                    {
+                                        <tr>
+                                            <td>
+                                                @item.Description
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button class="btn btn-outline-dangerous" @onclick="() => RemoveIngredient(item.Id)">
+                                                    <i class="bi bi-trash-fill"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-">
+                        <button class="btn btn-primary rounded" @onclick="HandleSubmit">
+                            Make A Meal
+                        </button>
+                        @*<button class="btn btn-primary rounded ms-2" @onclick="GlutenFreeHandleSubmit">
+                            Gluten-Free
+                        </button>*@
+                    </div>
+                </div>
+            </EditForm>
+        </div>
+        <div class="col-12 col-lg-6">
+            <p class="pe-5 me-lg-5 ms-lg-5 ps-5 mt-lg-5 pt-lg-2 text-left"><span class="fw-bold text-pink">PRO TIP: </span>AI-generated recipes are delightful and inventive.  Use your imagination to try something new!</p>
+            <div class="text-center ">
+                <img class="" src="/images/ChefByteTalkingHead.png" width="150" />
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+    [CascadingParameter]
+    private RecipeState? rState { get; set; }
+
+    <!--editcontext is defined here-->
+    private EditContext? editcontext;
+    <!--THIS IS THE VARIABLE TO LOOP OVER THE LIST OF INGREDIENTS, EACH INGREDIENT NOW HAS A PERSONAL IDENTIFIER-->
+    private List<Ingredient> ingredients = new List<Ingredient>();
+    private Meal meal = new();
+
+    protected override void OnInitialized()
+    {
+        if (rState is null)
+        {
+            navigationManager.NavigateTo("/", forceLoad: true);
+            return;
+        }
+
+        editcontext = new(meal);
+
+        meal.mealtime = rState.MealTime;
+        ingredients = rState.Ingredients;
+    }
+
+    <!--editcontext Model-->
+    private class Meal
+    {
+        public string? mealtime { get; set; }
+        public string? ingredient { get; set; }
+    }
+
+    <!--THE ONCLICK METHOD FOR OUR "ADD" BUTTON, create unique ID's for CRUD deletion-->
+    <!--ADD METHOD-->
+    private void AddIngredient()
+    {
+        if (!string.IsNullOrEmpty(meal.ingredient))
+        {
+            ingredients.Add(new Ingredient()
+                {
+                    Id = Guid.NewGuid(),
+                    Description = meal.ingredient
+                }
+            );
+        }
+
+        //CLEAR THE TEXT FIELD
+        meal.ingredient = string.Empty;
+    }
+    private void RemoveAll()
+    {
+        ingredients.Clear();    
+    }
+
+    <!--DELETE METHOD-->
+    private void RemoveIngredient(Guid id)
+    {
+        ingredients.Remove(ingredients.First(i => i.Id == id));
+    }
+
+    <!--SUBMIT METHOD-->
+    private void HandleSubmit()
+    {
+        rState.MealTime = meal.mealtime;
+        rState.Ingredients = ingredients;
+        navigationManager.NavigateTo("/mealideas");
+    }
+
+    <!--GLUTEN-FREE SUBMIT METHOD-->
+    private void GlutenFreeHandleSubmit() 
+    {
+        rState.MealTime = meal.mealtime;
+        rState.Ingredients = ingredients;
+        navigationManager.NavigateTo("/glutenfreemealideas");
+    }
+}
